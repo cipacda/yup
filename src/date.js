@@ -1,7 +1,6 @@
 import MixedSchema from './mixed';
 import inherits from './util/inherits';
 import isoParse from './util/isodate';
-import { date as locale } from './locale';
 import isAbsent from './util/isAbsent';
 import Ref from './Reference';
 
@@ -31,7 +30,7 @@ inherits(DateSchema, MixedSchema, {
     return isDate(v) && !isNaN(v.getTime());
   },
 
-  min(min, message = locale.min) {
+  min(min, message) {
     var limit = min;
 
     if (!Ref.isRef(limit)) {
@@ -44,7 +43,7 @@ inherits(DateSchema, MixedSchema, {
 
     return this.test({
       message,
-      name: 'min',
+      name: 'date.min',
       exclusive: true,
       params: { min },
       test(value) {
@@ -53,7 +52,7 @@ inherits(DateSchema, MixedSchema, {
     });
   },
 
-  max(max, message = locale.max) {
+  max(max, message) {
     var limit = max;
 
     if (!Ref.isRef(limit)) {
@@ -66,7 +65,7 @@ inherits(DateSchema, MixedSchema, {
 
     return this.test({
       message,
-      name: 'max',
+      name: 'date.max',
       exclusive: true,
       params: { max },
       test(value) {

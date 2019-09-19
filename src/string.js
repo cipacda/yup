@@ -1,6 +1,5 @@
 import inherits from './util/inherits';
 import MixedSchema from './mixed';
-import { string as locale } from './locale';
 import isAbsent from './util/isAbsent';
 
 // eslint-disable-next-line
@@ -16,7 +15,7 @@ export default function StringSchema() {
   MixedSchema.call(this, { type: 'string' });
 
   this.withMutation(() => {
-    this.transform(function (value) {
+    this.transform(function(value) {
       if (this.isType(value)) return value;
       return value != null && value.toString ? value.toString() : value;
     });
@@ -34,10 +33,10 @@ inherits(StringSchema, MixedSchema, {
     return MixedSchema.prototype._cast.call(this, value) && value.length > 0;
   },
 
-  length(length, message = locale.length) {
+  length(length, message) {
     return this.test({
       message,
-      name: 'length',
+      name: 'string.length',
       exclusive: true,
       params: { length },
       test(value) {
@@ -46,10 +45,10 @@ inherits(StringSchema, MixedSchema, {
     });
   },
 
-  min(min, message = locale.min) {
+  min(min, message) {
     return this.test({
       message,
-      name: 'min',
+      name: 'string.min',
       exclusive: true,
       params: { min },
       test(value) {
@@ -58,9 +57,9 @@ inherits(StringSchema, MixedSchema, {
     });
   },
 
-  max(max, message = locale.max) {
+  max(max, message) {
     return this.test({
-      name: 'max',
+      name: 'string.max',
       exclusive: true,
       message,
       params: { max },
@@ -86,8 +85,8 @@ inherits(StringSchema, MixedSchema, {
     }
 
     return this.test({
-      name: name || 'matches',
-      message: message || locale.matches,
+      name: name || 'string.matches',
+      message: message,
       params: { regex },
       test: value =>
         isAbsent(value) ||
@@ -96,17 +95,17 @@ inherits(StringSchema, MixedSchema, {
     });
   },
 
-  email(message = locale.email) {
+  email(message) {
     return this.matches(rEmail, {
-      name: 'email',
+      name: 'string.email',
       message,
       excludeEmptyString: true,
     });
   },
 
-  url(message = locale.url) {
+  url(message) {
     return this.matches(rUrl, {
-      name: 'url',
+      name: 'string.url',
       message,
       excludeEmptyString: true,
     });
@@ -117,31 +116,31 @@ inherits(StringSchema, MixedSchema, {
     return this.default('').transform(val => (val === null ? '' : val));
   },
 
-  trim(message = locale.trim) {
+  trim(message) {
     return this.transform(val => (val != null ? val.trim() : val)).test({
       message,
-      name: 'trim',
+      name: 'string.trim',
       test: isTrimmed,
     });
   },
 
-  lowercase(message = locale.lowercase) {
+  lowercase(message) {
     return this.transform(
       value => (!isAbsent(value) ? value.toLowerCase() : value),
     ).test({
       message,
-      name: 'string_case',
+      name: 'string.lowercase',
       exclusive: true,
       test: value => isAbsent(value) || value === value.toLowerCase(),
     });
   },
 
-  uppercase(message = locale.uppercase) {
+  uppercase(message) {
     return this.transform(
       value => (!isAbsent(value) ? value.toUpperCase() : value),
     ).test({
       message,
-      name: 'string_case',
+      name: 'string.uppercase',
       exclusive: true,
       test: value => isAbsent(value) || value === value.toUpperCase(),
     });

@@ -6,7 +6,6 @@ import mapValues from 'lodash/mapValues';
 import { getter } from 'property-expr';
 
 import MixedSchema from './mixed';
-import { object as locale } from './locale.js';
 import sortFields from './util/sortFields';
 import sortByKeyOrder from './util/sortByKeyOrder';
 import inherits from './util/inherits';
@@ -229,14 +228,14 @@ inherits(ObjectSchema, MixedSchema, {
     });
   },
 
-  noUnknown(noAllow = true, message = locale.noUnknown) {
+  noUnknown(noAllow = true, message) {
     if (typeof noAllow === 'string') {
       message = noAllow;
       noAllow = true;
     }
 
     let next = this.test({
-      name: 'noUnknown',
+      name: 'object.noUnknown',
       exclusive: true,
       message: message,
       test(value) {
@@ -251,7 +250,7 @@ inherits(ObjectSchema, MixedSchema, {
     return next;
   },
 
-  unknown(allow = true, message = locale.noUnknown) {
+  unknown(allow = true, message) {
     return this.noUnknown(!allow, message);
   },
 

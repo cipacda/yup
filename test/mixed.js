@@ -11,6 +11,7 @@ import {
   ValidationError,
 } from '../src';
 import { ensureSync } from './helpers';
+import setLocales from '../src/setLocales';
 
 let noop = () => {};
 
@@ -327,11 +328,11 @@ describe('Mixed Types ', () => {
   });
 
   it('should overload test()', () => {
-    let inst = mixed().test('test', noop);
+    let inst = mixed().test('test', 'passed message', noop);
 
     inst.tests.length.should.equal(1);
     inst.tests[0].OPTIONS.test.should.equal(noop);
-    inst.tests[0].OPTIONS.message.should.equal('${path} is invalid');
+    inst.tests[0].OPTIONS.message.should.equal('passed message');
   });
 
   it('should fallback to default message', async () => {
@@ -591,7 +592,7 @@ describe('Mixed Types ', () => {
     });
 
     it('should have the tests in the correct order', () => {
-      reach(next, 'str').tests[0].OPTIONS.name.should.equal('required');
+      reach(next, 'str').tests[0].OPTIONS.name.should.equal('mixed.required');
     });
 
     it('should validate correctly', async () => {
@@ -903,7 +904,7 @@ describe('Mixed Types ', () => {
           label: undefined,
           tests: [
             {
-              name: 'required',
+              name: 'mixed.required',
               params: undefined,
             },
           ],
@@ -913,7 +914,7 @@ describe('Mixed Types ', () => {
             label: undefined,
             tests: [
               {
-                name: 'integer',
+                name: 'number.integer',
                 params: undefined,
               },
             ],
@@ -922,12 +923,68 @@ describe('Mixed Types ', () => {
         bar: {
           type: 'string',
           label: 'str!',
-          tests: [{ name: 'max', params: { max: 2 } }],
+          tests: [{ name: 'string.max', params: { max: 2 } }],
           meta: {
             input: 'foo',
           },
         },
       },
+    });
+  });
+
+  describe('with locales', () => {
+    it('should display default language message if no message passed', async () => {
+      let inst = mixed().required();
+
+      const error = await inst.validate(null).should.be.rejected();
+
+      expect(error.message).to.equal('this is a required field');
+    });
+
+    it('should display set language message if no message passed', async () => {
+      let inst = mixed().required();
+      const roMessage = 'custom ro message';
+      setLocales({ ro: { mixed: { required: roMessage } } });
+
+      const error = await inst
+        .validate(undefined, { lang: 'ro' })
+        .should.be.rejected();
+
+      return expect(error.message).to.equal(roMessage);
+    });
+
+    it('should display passed message regardless of language mentioned', async () => {
+      const message = 'custom message';
+      let inst = mixed().required(message);
+
+      const error = await inst.validate(undefined).should.be.rejected();
+
+      expect(error.message).to.equal(message);
+    });
+
+    it('should display translated default error message if test name not defined in locale', async () => {
+      const roMessage = 'custom ro default message';
+      setLocales({ ro: { mixed: { default: roMessage } } });
+      let inst = mixed().test('customName', () => false);
+
+      const error = await inst
+        .validate(undefined, { lang: 'ro' })
+        .should.be.rejected();
+
+      expect(error.message).to.equal(roMessage);
+    });
+
+    it('should display error in default language if not present in language locale', async () => {
+      setLocales({
+        ro: { mixed: { default: 'some message for ro locale to exist' } },
+      });
+      let inst = string().email();
+
+      const error = await inst
+        .validate('not an email', { lang: 'ro' })
+        .should.be.rejected();
+
+      expect(error.message).to.equal('this must be a valid email');
     });
   });
 });

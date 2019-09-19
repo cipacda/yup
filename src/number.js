@@ -1,6 +1,5 @@
 import inherits from './util/inherits';
 import MixedSchema from './mixed';
-import { number as locale } from './locale';
 import isAbsent from './util/isAbsent';
 
 let isNaN = value => value != +value;
@@ -35,10 +34,10 @@ inherits(NumberSchema, MixedSchema, {
     return typeof value === 'number' && !isNaN(value);
   },
 
-  min(min, message = locale.min) {
+  min(min, message) {
     return this.test({
       message,
-      name: 'min',
+      name: 'number.min',
       exclusive: true,
       params: { min },
       test(value) {
@@ -47,10 +46,10 @@ inherits(NumberSchema, MixedSchema, {
     });
   },
 
-  max(max, message = locale.max) {
+  max(max, message) {
     return this.test({
       message,
-      name: 'max',
+      name: 'number.max',
       exclusive: true,
       params: { max },
       test(value) {
@@ -59,10 +58,10 @@ inherits(NumberSchema, MixedSchema, {
     });
   },
 
-  lessThan(less, message = locale.lessThan) {
+  lessThan(less, message, name = 'number.lessThan') {
     return this.test({
       message,
-      name: 'max',
+      name,
       exclusive: true,
       params: { less },
       test(value) {
@@ -71,10 +70,10 @@ inherits(NumberSchema, MixedSchema, {
     });
   },
 
-  moreThan(more, message = locale.moreThan) {
+  moreThan(more, message, name = 'number.moreThan') {
     return this.test({
       message,
-      name: 'min',
+      name,
       exclusive: true,
       params: { more },
       test(value) {
@@ -83,17 +82,17 @@ inherits(NumberSchema, MixedSchema, {
     });
   },
 
-  positive(msg = locale.positive) {
-    return this.moreThan(0, msg);
+  positive(msg) {
+    return this.moreThan(0, msg, 'number.positive');
   },
 
-  negative(msg = locale.negative) {
-    return this.lessThan(0, msg);
+  negative(msg) {
+    return this.lessThan(0, msg, 'number.negative');
   },
 
-  integer(message = locale.integer) {
+  integer(message) {
     return this.test({
-      name: 'integer',
+      name: 'number.integer',
       message,
       test: val => isAbsent(val) || Number.isInteger(val),
     });

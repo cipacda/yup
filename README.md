@@ -177,15 +177,58 @@ schema.cast({
 Allows you to customize the default messages used by Yup, when no message is provided with a validation test.
 If any message is missing in the custom dictionary the error message will default to Yup's one.
 
+It supports multiple languages, that can be set at the time when the schema is validated.
+
 ```js
 import { setLocale } from 'yup';
 
-setLocale({
-  mixed: {
-    default: 'Não é válido',
+setLocale(
+  {
+    mixed: {
+      default: 'Não é válido',
+    },
+    number: {
+      min: 'Deve ser maior que ${min}',
+    },
   },
-  number: {
-    min: 'Deve ser maior que ${min}',
+  'es',
+);
+
+// now use Yup schemas AFTER you defined your custom dictionary
+let schema = yup.object().shape({
+  name: yup.string(),
+  age: yup.number().min(18),
+});
+
+schema
+  .validate({ name: 'jimmy', age: 11 }, { lang: 'es' })
+  .catch(function(err) {
+    err.name; // => 'ValidationError'
+    err.errors; // => ['Deve ser maior que 18']
+  });
+```
+
+Setting all language locales at once
+
+```js
+import { setLocale } from 'yup';
+
+setLocales({
+  es: {
+    mixed: {
+      default: 'Não é válido',
+    },
+    number: {
+      min: 'Deve ser maior que ${min}',
+    },
+  },
+  ro: {
+    mixed: {
+      default: 'Nu este valid',
+    },
+    number: {
+      min: 'Valoare trebuie sa fie mai mare decat {{min}}',
+    },
   },
 });
 
@@ -195,10 +238,12 @@ let schema = yup.object().shape({
   age: yup.number().min(18),
 });
 
-schema.validate({ name: 'jimmy', age: 11 }).catch(function(err) {
-  err.name; // => 'ValidationError'
-  err.errors; // => ['Deve ser maior que 18']
-});
+schema
+  .validate({ name: 'jimmy', age: 11 }, { lang: 'ro' })
+  .catch(function(err) {
+    err.name; // => 'ValidationError'
+    err.errors; // => ['Valoare trebuie sa fie mai mare decat 18']
+  });
 ```
 
 ## API

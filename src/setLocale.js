@@ -1,9 +1,6 @@
-import locale from './locale';
+import locale, { defaultLanguage } from './locales';
+import merge from 'lodash/merge';
 
-export default function setLocale(custom) {
-  Object.keys(custom).forEach(type => {
-    Object.keys(custom[type]).forEach(method => {
-      locale[type][method] = custom[type][method];
-    });
-  });
+export default function setLocale(custom, language = defaultLanguage) {
+  locale[language] = merge(locale[language], custom);
 }

@@ -2,6 +2,7 @@ import string from '../src/string';
 import number from '../src/number';
 import object from '../src/object';
 import array from '../src/array';
+import setLocale from '../src/setLocale';
 
 describe('Array types', () => {
   describe('casting', () => {
@@ -174,5 +175,34 @@ describe('Array types', () => {
     inst.cast(a).should.equal(a);
 
     inst.cast(null).should.eql([]);
+  });
+
+  it('should return default locale message if no language specified', async () => {
+    let error = await array()
+      .min(1)
+      .validate([])
+      .should.be.rejected();
+
+    expect(error.message).to.equal('this field must have at least 1 items');
+  });
+
+  it('should return message translated if language specified', async () => {
+    setLocale({ array: { min: 'Minimum ${min} elemente' } }, 'ro');
+    let error = await array()
+      .min(1)
+      .validate([], { lang: 'ro' })
+      .should.be.rejected();
+
+    expect(error.message).to.equal('Minimum 1 elemente');
+  });
+
+  it('should return passed message', async () => {
+    const message = 'some custom message - not translated';
+    let error = await array()
+      .min(1, message)
+      .validate([], { lang: 'ro' })
+      .should.be.rejected();
+
+    expect(error.message).to.equal(message);
   });
 });

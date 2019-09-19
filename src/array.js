@@ -4,7 +4,6 @@ import isSchema from './util/isSchema';
 import makePath from './util/makePath';
 import printValue from './util/printValue';
 import MixedSchema from './mixed';
-import { array as locale } from './locale';
 import runValidations, { propagateErrors } from './util/runValidations';
 
 export default ArraySchema;
@@ -128,11 +127,9 @@ inherits(ArraySchema, MixedSchema, {
   },
 
   min(min, message) {
-    message = message || locale.min;
-
     return this.test({
       message,
-      name: 'min',
+      name: 'array.min',
       exclusive: true,
       params: { min },
       test(value) {
@@ -142,10 +139,9 @@ inherits(ArraySchema, MixedSchema, {
   },
 
   max(max, message) {
-    message = message || locale.max;
     return this.test({
       message,
-      name: 'max',
+      name: 'array.max',
       exclusive: true,
       params: { max },
       test(value) {

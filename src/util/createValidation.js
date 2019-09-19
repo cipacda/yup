@@ -2,6 +2,8 @@ import mapValues from 'lodash/mapValues';
 import ValidationError from '../ValidationError';
 import Ref from '../Reference';
 import { SynchronousPromise } from 'synchronous-promise';
+import get from 'lodash/get';
+import languageLocale from '../languageLocale';
 
 let formatError = ValidationError.formatError;
 
@@ -55,6 +57,32 @@ export function createErrorFactory({
   };
 }
 
+function getMessage(passedMessage, name, lang) {
+  if (passedMessage) {
+    return passedMessage;
+  }
+
+  const messageInSpecifiedLanguage = get(languageLocale(lang), name);
+  if (messageInSpecifiedLanguage) {
+    return messageInSpecifiedLanguage;
+  }
+
+  const messageInDefaultLanguage = get(languageLocale(), name);
+  if (messageInDefaultLanguage) {
+    return messageInDefaultLanguage;
+  }
+
+  const defaultMessageInSpecifiedLanguage = get(
+    languageLocale(lang),
+    'mixed.default',
+  );
+  if (defaultMessageInSpecifiedLanguage) {
+    return defaultMessageInSpecifiedLanguage;
+  }
+
+  return languageLocale().mixed.default;
+}
+
 export default function createValidation(options) {
   let { name, message, test, params } = options;
 
@@ -67,6 +95,7 @@ export default function createValidation(options) {
     sync,
     ...rest
   }) {
+    let translatedMessage = getMessage(message, name, options.lang);
     let parent = options.parent;
     let resolve = item =>
       Ref.isRef(item)
@@ -74,7 +103,7 @@ export default function createValidation(options) {
         : item;
 
     let createError = createErrorFactory({
-      message,
+      message: translatedMessage,
       path,
       value,
       originalValue,
