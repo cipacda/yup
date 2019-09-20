@@ -85,7 +85,7 @@ inherits(StringSchema, MixedSchema, {
     }
 
     return this.test({
-      name: name || 'string.matches',
+      name: `string.${name || 'matches'}`,
       message: message,
       params: { regex },
       test: value =>
@@ -97,7 +97,7 @@ inherits(StringSchema, MixedSchema, {
 
   email(message) {
     return this.matches(rEmail, {
-      name: 'string.email',
+      name: 'email',
       message,
       excludeEmptyString: true,
     });
@@ -105,7 +105,7 @@ inherits(StringSchema, MixedSchema, {
 
   url(message) {
     return this.matches(rUrl, {
-      name: 'string.url',
+      name: 'url',
       message,
       excludeEmptyString: true,
     });
