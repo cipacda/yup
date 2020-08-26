@@ -57,25 +57,37 @@ export function createErrorFactory({
   };
 }
 
-function getMessage(passedMessage, name, lang) {
+function translate(key, lang, params) {
+  const translation = get(languageLocale(lang), name);
+  return Object.keys(params).reduce(
+    (prev, key) => prev.split(`\${${key}`).join(params[key]),
+    translation,
+  );
+}
+
+function getMessage(passedMessage, name, path, lang) {
   if (passedMessage) {
     return passedMessage;
   }
 
-  const messageInSpecifiedLanguage = get(languageLocale(lang), name);
+  const translateParams = { path };
+
+  const messageInSpecifiedLanguage = translate(name, lang, translateParams);
   if (messageInSpecifiedLanguage) {
     return messageInSpecifiedLanguage;
   }
 
-  const messageInDefaultLanguage = get(languageLocale(), name);
+  const messageInDefaultLanguage = translate(name, undefined, translateParams);
   if (messageInDefaultLanguage) {
     return messageInDefaultLanguage;
   }
 
-  const defaultMessageInSpecifiedLanguage = get(
-    languageLocale(lang),
+  const defaultMessageInSpecifiedLanguage = translate(
     'mixed.default',
+    lang,
+    translateParams,
   );
+
   if (defaultMessageInSpecifiedLanguage) {
     return defaultMessageInSpecifiedLanguage;
   }
@@ -95,7 +107,7 @@ export default function createValidation(options) {
     sync,
     ...rest
   }) {
-    let translatedMessage = getMessage(message, name, options.lang);
+    let translatedMessage = getMessage(message, name, path, options.lang);
     let parent = options.parent;
     let resolve = item =>
       Ref.isRef(item)
