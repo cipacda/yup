@@ -17,6 +17,17 @@ class RefSet {
     this.list = new Set();
     this.refs = new Map();
   }
+  get size() {
+    return this.list.size + this.refs.size;
+  }
+  describe() {
+    const description = [];
+
+    for (const item of this.list) description.push(item);
+    for (const [, ref] of this.refs) description.push(ref.describe());
+
+    return description;
+  }
   toArray() {
     return toArray(this.list).concat(toArray(this.refs.values()));
   }
@@ -72,6 +83,8 @@ export default function SchemaType(options = {}) {
 
   if (has(options, 'default')) this._defaultDefault = options.default;
 
+  this.type = options.type || 'mixed';
+  // TODO: remove
   this._type = options.type || 'mixed';
 }
 
@@ -242,6 +255,11 @@ const proto = (SchemaType.prototype = {
       originalValue,
       sync,
     };
+
+    if (options.from) {
+      validationParams.from = options.from;
+    }
+
     let initialTests = [];
 
     if (this._typeError) initialTests.push(this._typeError(validationParams));
@@ -528,8 +546,7 @@ const proto = (SchemaType.prototype = {
 
   describe() {
     const next = this.clone();
-
-    return {
+    const description = {
       type: next._type,
       meta: next._meta,
       label: next._label,
@@ -539,6 +556,22 @@ const proto = (SchemaType.prototype = {
           (n, idx, list) => list.findIndex(c => c.name === n.name) === idx,
         ),
     };
+
+    if (next._whitelist.size) description.oneOf = next._whitelist.describe();
+    if (next._blacklist.size) description.notOneOf = next._blacklist.describe();
+
+    return description;
+  },
+
+  defined(message = locale.defined) {
+    return this.nullable().test({
+      message,
+      name: 'defined',
+      exclusive: true,
+      test(value) {
+        return value !== undefined;
+      },
+    });
   },
 });
 
@@ -550,7 +583,6 @@ for (const method of ['validate', 'validateSync'])
       value,
       options.context,
     );
-
     return schema[method](parent && parent[parentPath], {
       ...options,
       parent,

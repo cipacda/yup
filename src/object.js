@@ -87,7 +87,7 @@ inherits(ObjectSchema, MixedSchema, {
     let innerOptions = {
       ...options,
       parent: intermediateValue,
-      __validating: false,
+      __validating: options.__validating || false,
     };
 
     let isChanged = false;
@@ -130,10 +130,12 @@ inherits(ObjectSchema, MixedSchema, {
     let originalValue =
       opts.originalValue != null ? opts.originalValue : _value;
 
+    let from = [{ schema: this, value: originalValue }, ...(opts.from || [])];
+
     endEarly = this._option('abortEarly', opts);
     recursive = this._option('recursive', opts);
 
-    opts = { ...opts, __validating: true, originalValue };
+    opts = { ...opts, __validating: true, originalValue, from };
 
     return MixedSchema.prototype._validate
       .call(this, _value, opts)
@@ -145,6 +147,12 @@ inherits(ObjectSchema, MixedSchema, {
           return value;
         }
 
+        from = originalValue
+          ? [...from]
+          : [
+              { schema: this, value: originalValue || value },
+              ...(opts.from || []),
+            ];
         originalValue = originalValue || value;
 
         let validations = this._nodes.map(key => {
@@ -157,6 +165,7 @@ inherits(ObjectSchema, MixedSchema, {
           let innerOptions = {
             ...opts,
             path,
+            from,
             parent: value,
             originalValue: originalValue[key],
           };
@@ -239,8 +248,12 @@ inherits(ObjectSchema, MixedSchema, {
       exclusive: true,
       message: message,
       test(value) {
+        if (value == null) return true;
+        const unknownKeys = unknown(this.schema, value);
         return (
-          value == null || !noAllow || unknown(this.schema, value).length === 0
+          !noAllow ||
+          unknownKeys.length === 0 ||
+          this.createError({ params: { unknown: unknownKeys.join(', ') } })
         );
       },
     });

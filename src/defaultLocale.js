@@ -20,6 +20,7 @@ export let mixed = {
 
     return msg;
   },
+  defined: '${path} must be defined',
 };
 
 export let string = {
@@ -29,6 +30,7 @@ export let string = {
   matches: '${path} must match the following: "${regex}"',
   email: '${path} must be a valid email',
   url: '${path} must be a valid URL',
+  uuid: '${path} must be a valid UUID',
   trim: '${path} must be a trimmed string',
   lowercase: '${path} must be a lowercase string',
   uppercase: '${path} must be a upper case string',
@@ -53,7 +55,7 @@ export let date = {
 export let boolean = {};
 
 export let object = {
-  noUnknown: '${path} field cannot have keys not specified in the object shape',
+  noUnknown: '${path} field has unspecified keys: ${unknown}',
 };
 
 export let array = {

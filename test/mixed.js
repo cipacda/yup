@@ -380,21 +380,41 @@ describe('Mixed Types ', () => {
         name: 'test',
         test: () => {},
       })
-      .test({ message: 'also invalid', name: 'test', test: () => {} });
+      .test({
+        message: 'also invalid',
+        name: 'test',
+        test: () => {},
+      });
 
     inst.tests.length.should.equal(1);
 
     inst = mixed()
-      .test({ message: 'invalid', name: 'test', test: () => {} })
-      .test({ message: 'also invalid', name: 'test', test: () => {} });
+      .test({
+        message: 'invalid',
+        name: 'test',
+        test: () => {},
+      })
+      .test({
+        message: 'also invalid',
+        name: 'test',
+        test: () => {},
+      });
 
     inst.tests.length.should.equal(2);
   });
 
   it('should non-exclusive tests should stack', () => {
     let inst = mixed()
-      .test({ name: 'test', message: ' ', test: () => {} })
-      .test({ name: 'test', message: ' ', test: () => {} });
+      .test({
+        name: 'test',
+        message: ' ',
+        test: () => {},
+      })
+      .test({
+        name: 'test',
+        message: ' ',
+        test: () => {},
+      });
 
     inst.tests.length.should.equal(2);
   });
@@ -409,9 +429,22 @@ describe('Mixed Types ', () => {
 
   it('should replace existing exclusive tests, with non-exclusive', () => {
     let inst = mixed()
-      .test({ name: 'test', exclusive: true, message: ' ', test: () => {} })
-      .test({ name: 'test', message: ' ', test: () => {} })
-      .test({ name: 'test', message: ' ', test: () => {} });
+      .test({
+        name: 'test',
+        exclusive: true,
+        message: ' ',
+        test: () => {},
+      })
+      .test({
+        name: 'test',
+        message: ' ',
+        test: () => {},
+      })
+      .test({
+        name: 'test',
+        message: ' ',
+        test: () => {},
+      });
 
     inst.tests.length.should.equal(2);
   });
@@ -466,6 +499,45 @@ describe('Mixed Types ', () => {
     );
 
     called.should.equal(true);
+  });
+
+  it('tests should be able to access nested parent', async () => {
+    let finalFrom, finalOptions;
+    let testFixture = {
+      firstField: 'test',
+      second: [
+        {
+          thirdField: 'test3',
+        },
+        {
+          thirdField: 'test4',
+        },
+      ],
+    };
+
+    let third = object({
+      thirdField: mixed().test({
+        test() {
+          finalFrom = this.from;
+          finalOptions = this.options;
+          return true;
+        },
+      }),
+    });
+
+    let second = array().of(third);
+
+    let first = object({
+      firstField: mixed(),
+      second,
+    });
+
+    await first.validate(testFixture);
+
+    finalFrom[0].value.should.eql(testFixture.second[finalOptions.index]);
+    finalFrom[0].schema.should.equal(third);
+    finalFrom[1].value.should.equal(testFixture);
+    finalFrom[1].schema.should.equal(first);
   });
 
   it('tests can return an error', () => {
@@ -889,7 +961,9 @@ describe('Mixed Types ', () => {
       bar: string()
         .max(2)
         .meta({ input: 'foo' })
-        .label('str!'),
+        .label('str!')
+        .oneOf(['a', 'b'])
+        .notOneOf([ref('foo')]),
     }).describe();
 
     desc.should.eql({
@@ -927,6 +1001,13 @@ describe('Mixed Types ', () => {
           meta: {
             input: 'foo',
           },
+          oneOf: ['a', 'b'],
+          notOneOf: [
+            {
+              type: 'ref',
+              key: 'foo',
+            },
+          ],
         },
       },
     });
@@ -985,6 +1066,43 @@ describe('Mixed Types ', () => {
         .should.be.rejected();
 
       expect(error.message).to.equal('this must be a valid email');
+    });
+  });
+
+  describe('defined', () => {
+    it('should fail when value is undefined', async () => {
+      let inst = object({
+        prop: string().defined(),
+      });
+
+      await inst
+        .validate({})
+        .should.be.rejected()
+        .then(function(err) {
+          err.message.should.equal('prop must be defined');
+        });
+    });
+
+    it('should pass when value is null', async () => {
+      let inst = object({
+        prop: string().defined(),
+      });
+
+      await inst
+        .isValid({ prop: null })
+        .should.eventually()
+        .equal(true);
+    });
+
+    it('should pass when value is not undefined nor null', async () => {
+      let inst = object({
+        prop: string().defined(),
+      });
+
+      await inst
+        .isValid({ prop: 'prop value' })
+        .should.eventually()
+        .equal(true);
     });
   });
 });

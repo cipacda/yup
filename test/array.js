@@ -175,6 +175,54 @@ describe('Array types', () => {
     inst.cast(a).should.equal(a);
 
     inst.cast(null).should.eql([]);
+    // nullable is redundant since this should always produce an array
+    // but we want to ensure that null is actually turned into an array
+    inst
+      .nullable()
+      .cast(null)
+      .should.eql([]);
+
+    inst.cast(1).should.eql([1]);
+    inst
+      .nullable()
+      .cast(1)
+      .should.eql([1]);
+  });
+
+  it('should pass resolved path to descendants', async () => {
+    let value = ['2', '3'];
+    let expectedPaths = ['[0]', '[1]'];
+
+    let itemSchema = string().when([], function(_, context) {
+      let path = context.path || '';
+      path.should.be.oneOf(expectedPaths);
+      return string().required();
+    });
+
+    await array()
+      .of(itemSchema)
+      .validate(value);
+  });
+
+  it('should maintain array sparseness through validation', async () => {
+    let sparseArray = new Array(2);
+    sparseArray[1] = 1;
+    let value = await array()
+      .of(number())
+      .validate(sparseArray);
+    expect(0 in sparseArray).to.be.false();
+    expect(0 in value).to.be.false();
+    // eslint-disable-next-line no-sparse-arrays
+    value.should.eql([, 1]);
+  });
+
+  it('should validate empty slots in sparse array', async () => {
+    let sparseArray = new Array(2);
+    sparseArray[1] = 1;
+    await array()
+      .of(number().required())
+      .isValid(sparseArray)
+      .should.become(false);
   });
 
   it('should return default locale message if no language specified', async () => {

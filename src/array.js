@@ -16,6 +16,7 @@ function ArraySchema(type) {
   // `undefined` specifically means uninitialized, as opposed to
   // "no subtype"
   this._subType = undefined;
+  this.innerType = undefined;
 
   this.withMutation(() => {
     this.transform(function(values) {
@@ -42,11 +43,14 @@ inherits(ArraySchema, MixedSchema, {
     const value = MixedSchema.prototype._cast.call(this, _value, _opts);
 
     //should ignore nulls here
-    if (!this._typeCheck(value) || !this._subType) return value;
+    if (!this._typeCheck(value) || !this.innerType) return value;
 
     let isChanged = false;
-    const castArray = value.map(v => {
-      const castElement = this._subType.cast(v, _opts);
+    const castArray = value.map((v, idx) => {
+      const castElement = this.innerType.cast(v, {
+        ..._opts,
+        path: makePath`${_opts.path}[${idx}]`,
+      });
       if (castElement !== v) {
         isChanged = true;
       }
@@ -61,7 +65,7 @@ inherits(ArraySchema, MixedSchema, {
     let errors = [];
     let sync = options.sync;
     let path = options.path;
-    let subType = this._subType;
+    let innerType = this.innerType;
     let endEarly = this._option('abortEarly', options);
     let recursive = this._option('recursive', options);
 
@@ -72,15 +76,18 @@ inherits(ArraySchema, MixedSchema, {
       .call(this, _value, options)
       .catch(propagateErrors(endEarly, errors))
       .then(value => {
-        if (!recursive || !subType || !this._typeCheck(value)) {
+        if (!recursive || !innerType || !this._typeCheck(value)) {
           if (errors.length) throw errors[0];
           return value;
         }
 
         originalValue = originalValue || value;
 
-        let validations = value.map((item, idx) => {
-          var path = makePath`${options.path}[${idx}]`;
+        // #950 Ensure that sparse array empty slots are validated
+        let validations = new Array(value.length);
+        for (let idx = 0; idx < value.length; idx++) {
+          let item = value[idx];
+          let path = makePath`${options.path}[${idx}]`;
 
           // object._validate note for isStrict explanation
           var innerOptions = {
@@ -88,13 +95,14 @@ inherits(ArraySchema, MixedSchema, {
             path,
             strict: true,
             parent: value,
+            index: idx,
             originalValue: originalValue[idx],
           };
 
-          if (subType.validate) return subType.validate(item, innerOptions);
-
-          return true;
-        });
+          validations[idx] = innerType.validate
+            ? innerType.validate(item, innerOptions)
+            : true;
+        }
 
         return runValidations({
           sync,
@@ -108,7 +116,9 @@ inherits(ArraySchema, MixedSchema, {
   },
 
   _isPresent(value) {
-    return MixedSchema.prototype._cast.call(this, value) && value.length > 0;
+    return (
+      MixedSchema.prototype._isPresent.call(this, value) && value.length > 0
+    );
   },
 
   of(schema) {
@@ -122,6 +132,7 @@ inherits(ArraySchema, MixedSchema, {
       );
 
     next._subType = schema;
+    next.innerType = schema;
 
     return next;
   },
@@ -151,9 +162,10 @@ inherits(ArraySchema, MixedSchema, {
   },
 
   ensure() {
-    return this.default(() => []).transform(val => {
-      if (this.isType(val)) return val;
-      return val === null ? [] : [].concat(val);
+    return this.default(() => []).transform((val, original) => {
+      // We don't want to return `null` for nullable schema
+      if (this._typeCheck(val)) return val;
+      return original == null ? [] : [].concat(original);
     });
   },
 
@@ -167,7 +179,7 @@ inherits(ArraySchema, MixedSchema, {
 
   describe() {
     let base = MixedSchema.prototype.describe.call(this);
-    if (this._subType) base.innerType = this._subType.describe();
+    if (this.innerType) base.innerType = this.innerType.describe();
     return base;
   },
 });
