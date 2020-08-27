@@ -65,12 +65,26 @@ function translate(key, lang, params) {
   );
 }
 
+function getFieldTranslation(field, lang) {
+  const translatedFullPath = translate(field, lang);
+  if (translatedFullPath) {
+    return translatedFullPath;
+  }
+
+  const translatedPathTail = translate(field.split('.').pop(), lang);
+  if (translatedPathTail) {
+    return translatedPathTail;
+  }
+
+  return field;
+}
+
 function getMessage(passedMessage, name, path, lang) {
   if (passedMessage) {
     return passedMessage;
   }
 
-  const translateParams = { path };
+  const translateParams = { path: getFieldTranslation(path) };
 
   const messageInSpecifiedLanguage = translate(name, lang, translateParams);
   if (messageInSpecifiedLanguage) {
