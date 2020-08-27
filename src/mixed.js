@@ -563,10 +563,10 @@ const proto = (SchemaType.prototype = {
     return description;
   },
 
-  defined(message = locale.defined) {
+  defined(message) {
     return this.nullable().test({
       message,
-      name: 'defined',
+      name: 'mixed.defined',
       exclusive: true,
       test(value) {
         return value !== undefined;

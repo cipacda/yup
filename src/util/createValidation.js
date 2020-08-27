@@ -58,22 +58,31 @@ export function createErrorFactory({
 }
 
 function translate(key, lang, params) {
-  const translation = get(languageLocale(lang), name);
-  return Object.keys(params).reduce(
-    (prev, key) => prev.split(`\${${key}`).join(params[key]),
+  const translation = get(languageLocale(lang), key);
+  if (!translation) {
+    return translation;
+  }
+  return Object.keys(params || {}).reduce(
+    (prev, key) => prev.split(`\${${key}}`).join(params[key]),
     translation,
   );
 }
 
 function getFieldTranslation(field, lang) {
-  const translatedFullPath = translate(field, lang);
+  const translatedFullPath = translate(`fields.${field}`, lang);
   if (translatedFullPath) {
     return translatedFullPath;
   }
 
-  const translatedPathTail = translate(field.split('.').pop(), lang);
-  if (translatedPathTail) {
-    return translatedPathTail;
+  if (field) {
+    const translatedPathTail = field
+      .split('.')
+      .map((f) => translate(`fields.${f}`, lang))
+      .filter((f) => !!f)
+      .join("->");
+    if (translatedPathTail && translatedPathTail.length > 0) {
+      return translatedPathTail;
+    }
   }
 
   return field;
@@ -84,7 +93,7 @@ function getMessage(passedMessage, name, path, lang) {
     return passedMessage;
   }
 
-  const translateParams = { path: getFieldTranslation(path) };
+  const translateParams = { path: getFieldTranslation(path || "this", lang) };
 
   const messageInSpecifiedLanguage = translate(name, lang, translateParams);
   if (messageInSpecifiedLanguage) {
@@ -121,7 +130,7 @@ export default function createValidation(options) {
     sync,
     ...rest
   }) {
-    let translatedMessage = getMessage(message, name, path, options.lang);
+    let translatedMessage = getMessage(message, name, label || path, options.lang);
     let parent = options.parent;
     let resolve = item =>
       Ref.isRef(item)
