@@ -69,19 +69,28 @@ function translate(key, lang, params) {
 }
 
 function getFieldTranslation(field, lang) {
+  if (!field || field.length === 0) {
+    return field;
+  }
+
   const translatedFullPath = translate(`fields.${field}`, lang);
   if (translatedFullPath) {
     return translatedFullPath;
   }
 
   if (field) {
-    const translatedPathTail = field
-      .split('.')
-      .map((f) => translate(`fields.${f}`, lang))
-      .filter((f) => !!f)
-      .join("->");
-    if (translatedPathTail && translatedPathTail.length > 0) {
-      return translatedPathTail;
+    const [head, ...tail] = field.split('.');
+    if (tail.length > 0) {
+      const tailString = tail.join(".");
+      const headTranslation = getFieldTranslation(head);
+      const tailTranslation = getFieldTranslation(tailString);
+
+      if (headTranslation !== head && tailTranslation !== tailString) {
+        const translation = headTranslation !== head && [headTranslation, tailTranslation].filter((t) => !!t).join("->");
+        if (translation || translation.length > 0) {
+          return translation;
+        }
+      }
     }
   }
 
