@@ -18,7 +18,7 @@ declare function addMethod<T extends AnySchema>(schemaType: (...arg: any[]) => T
 declare function addMethod<T extends new (...args: any) => AnySchema>(schemaType: T, name: string, fn: (this: InstanceType<T>, ...args: any[]) => InstanceType<T>): void;
 declare type ObjectSchemaOf<T extends AnyObject, CustomTypes = never> = ObjectSchema<{
     [k in keyof T]-?: T[k] extends Array<infer E> ? ArraySchema<SchemaOf<E, CustomTypes> | Lazy<SchemaOf<E, CustomTypes>>> : T[k] extends Date | CustomTypes ? BaseSchema<Maybe<T[k]>, AnyObject, T[k]> : T[k] extends AnyObject ? // we can't use  ObjectSchema<{ []: SchemaOf<T[k]> }> b/c TS produces a union of two schema
-    ObjectSchemaOf<T[k], CustomTypes> | ObjectSchemaOf<Lazy<T[k]>, CustomTypes> : BaseSchema<Maybe<T[k]>, AnyObject, T[k]>;
+    ObjectSchemaOf<T[k], CustomTypes> | Lazy<ObjectSchemaOf<T[k], CustomTypes>> : BaseSchema<Maybe<T[k]>, AnyObject, T[k]>;
 }>;
 declare type SchemaOf<T, CustomTypes = never> = T extends Array<infer E> ? ArraySchema<SchemaOf<E, CustomTypes> | Lazy<SchemaOf<E, CustomTypes>>> : T extends Date | CustomTypes ? BaseSchema<Maybe<T>, AnyObject, T> : T extends AnyObject ? ObjectSchemaOf<T, CustomTypes> : BaseSchema<Maybe<T>, AnyObject, T>;
 export declare type AnyObjectSchema = ObjectSchema<any, any, any, any>;
